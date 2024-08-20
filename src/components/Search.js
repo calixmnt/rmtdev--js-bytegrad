@@ -7,10 +7,13 @@ import {
 import { BASE_API_URL } from "../constants.js";
 import renderError from "./Error.js";
 import renderSpinner from "./Spinner.js";
-import { renderJobItemHTML } from "./JobList.js";
+import renderJobList from "./JobList.js";
+import { getData } from "../utililities.js";
+import { state } from "../constants.js";
 
-const submitHandler = (e) => {
+const submitHandler = async e => {
   e.preventDefault();
+
   const searchText = searchInputEl.value;
 
   //Validation with regular expression
@@ -26,30 +29,22 @@ const submitHandler = (e) => {
 
   //remove previous list item
   jobListSearchEl.innerHTML = "";
-
   renderSpinner("search");
 
-  //Fetch Call
-  fetch(`${BASE_API_URL}/jobs?searc=${searchText}`)
-    .then((res) => {
-      //The guard clause tant aimé de bytegrad.
-      if (!res.ok) {
-        throw {message : res.statusText, statusCode : res.status};
-      }
-      return res.json();
-    })
-    .then((data) => {
-      const { jobItems: jobs } = data;
-      renderSpinner("search");
-      numberEl.textContent = jobs.length;
-      jobs.slice(0, 7).forEach((job) => {
-        renderJobItemHTML(job);
-      });
-    })
-    .catch((err) => {
-      renderSpinner("search");
-      renderError(err.message, 3500);
-    });
+  try {
+    const data = await getData(`${BASE_API_URL}/jobs?search=${searchText}`);
+    const { jobItems: jobs } = data;
+
+    //update the state
+    state.searchJobItems = jobs;
+
+    renderSpinner("search");
+    numberEl.textContent = state.searchJobItems.length;
+    renderJobList();
+  } catch (err) {
+    renderSpinner("search");
+    renderError(err.message, 3500);
+  }
 };
 
 searchFormEl.addEventListener("submit", submitHandler);

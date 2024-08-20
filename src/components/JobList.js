@@ -1,14 +1,16 @@
 import { jobDetailsContentEl, jobListSearchEl } from "../common.js";
 
 import { BASE_API_URL } from "../constants.js";
+import { getData } from "../utililities.js";
 import renderError from "./Error.js";
-import {renderJobDetails} from "./JobDetails.js";
+import { renderJobDetails } from "./JobDetails.js";
+import { state } from "../constants.js";
 
 import renderSpinner from "./Spinner.js";
 
-
-export const renderJobItemHTML = (job) => {
-  const newJobItemHtml = `
+const renderJobList = () => {
+  state.searchJobItems.slice(0, 7).forEach((job) => {
+    const newJobItemHtml = `
         <li class="job-item">
             <a class="job-item__link" href="${job.id}">
                 <div class="job-item__badge">${job.badgeLetters}</div>
@@ -33,9 +35,11 @@ export const renderJobItemHTML = (job) => {
     "text/html"
   ).body.firstChild;
   jobListSearchEl.insertAdjacentElement("beforeend", jobItemElement);
+  });
+  
 };
 
-const clickHandler = (e) => {
+const clickHandler = async e => {
   e.preventDefault();
   const clickedItem = e.target;
   const jobItemEl = clickedItem.closest(".job-item");
@@ -51,22 +55,17 @@ const clickHandler = (e) => {
   renderSpinner("job-details");
   const id = jobItemEl.children[0].getAttribute("href");
 
-  fetch(`${BASE_API_URL}/jobs/${id}`)
-    .then((res) => {
-      if (!res.ok) {
-        throw new Error();
-      }
-      return res.json();
-    })
-    .then((data) => {
-      const { jobItem } = data;
+  try {
+    const data = await getData(`${BASE_API_URL}/jobs/${id}`);
+    const { jobItem } = data;
       renderSpinner("job-details");
       renderJobDetails(jobItem);
-    })
-    .catch((err) => {
-      renderSpinner('job-details');
-      renderError(err);
-    });
+  } catch (err) {
+    renderSpinner("job-details");
+    renderError(err);
+  }
 };
 
 jobListSearchEl.addEventListener("click", clickHandler);
+
+export default renderJobList;
