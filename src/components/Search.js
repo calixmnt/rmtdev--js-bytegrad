@@ -3,15 +3,18 @@ import {
   jobListSearchEl,
   numberEl,
   searchFormEl,
+  sortingBtnRecentEl,
+  sortingBtnRelevantEl,
 } from "../common.js";
 import { BASE_API_URL } from "../constants.js";
 import renderError from "./Error.js";
 import renderSpinner from "./Spinner.js";
 import renderJobList from "./JobList.js";
+import renderPaginationButtons from "./Pagination.js";
 import { getData } from "../utililities.js";
 import { state } from "../constants.js";
 
-const submitHandler = async e => {
+const submitHandler = async (e) => {
   e.preventDefault();
 
   const searchText = searchInputEl.value;
@@ -29,6 +32,10 @@ const submitHandler = async e => {
 
   //remove previous list item
   jobListSearchEl.innerHTML = "";
+
+  sortingBtnRecentEl.classList.remove("sorting__button--active");
+  sortingBtnRelevantEl.classList.add("sorting__button--active");
+
   renderSpinner("search");
 
   try {
@@ -37,9 +44,12 @@ const submitHandler = async e => {
 
     //update the state
     state.searchJobItems = jobs;
+    state.currentPage = 1;
 
     renderSpinner("search");
     numberEl.textContent = state.searchJobItems.length;
+
+    renderPaginationButtons();
     renderJobList();
   } catch (err) {
     renderSpinner("search");

@@ -1,6 +1,6 @@
 import { jobDetailsContentEl, jobListSearchEl } from "../common.js";
 
-import { BASE_API_URL } from "../constants.js";
+import { BASE_API_URL, JOBS_PER_PAGE } from "../constants.js";
 import { getData } from "../utililities.js";
 import renderError from "./Error.js";
 import { renderJobDetails } from "./JobDetails.js";
@@ -9,9 +9,11 @@ import { state } from "../constants.js";
 import renderSpinner from "./Spinner.js";
 
 const renderJobList = () => {
-  state.searchJobItems.slice(0, 7).forEach((job) => {
+  // remove previous job items
+  jobListSearchEl.innerHTML = '';
+  state.searchJobItems.slice((state.currentPage - 1) * JOBS_PER_PAGE, state.currentPage * JOBS_PER_PAGE).forEach((job) => {
     const newJobItemHtml = `
-        <li class="job-item">
+        <li class="job-item ${state.activeJobItem.id === job.id && 'job-item--active'}">
             <a class="job-item__link" href="${job.id}">
                 <div class="job-item__badge">${job.badgeLetters}</div>
                 <div class="job-item__middle">
@@ -54,6 +56,9 @@ const clickHandler = async e => {
   jobDetailsContentEl.innerHTML = "";
   renderSpinner("job-details");
   const id = jobItemEl.children[0].getAttribute("href");
+  state.activeJobItem = state.searchJobItems.find(j => j.id === +id);
+  //add the id to the url
+  history.pushState(null, "", `/#${id}`);
 
   try {
     const data = await getData(`${BASE_API_URL}/jobs/${id}`);
